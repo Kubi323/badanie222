@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Badanie twórczego myślenia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b0e13;--surface:#131720;--surface2:#1b2029;--accent:#38bdf8;--accent-dark:#06222e;--accent2:#4ecdc4;--text:#e9edf2;--muted:#8a90a0;--border:rgba(255,255,255,0.08);--success:#4ecdc4;--danger:#ff6b6b;--warning:#f7c84a}
+body{font-family:Verdana,Geneva,'DejaVu Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#app{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:2rem;text-align:center;animation:fadeIn .3s ease;overflow-y:auto}
+.screen.active{display:flex}
+.screen.scrollable{justify-content:flex-start;padding-top:1.5rem;padding-bottom:3rem}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:1.9rem;font-weight:normal;letter-spacing:-.01em;margin-bottom:.35rem}
+h2{font-size:1.1rem;font-weight:normal;color:var(--muted);margin-bottom:1.6rem}
+.subtitle{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 2.5rem;max-width:680px;width:100%;text-align:left}
+.btn{background:var(--accent);color:var(--accent-dark);border:none;border-radius:8px;padding:.75rem 2.2rem;font-size:1rem;font-family:inherit;font-weight:bold;cursor:pointer;transition:opacity .15s,transform .1s}
+.btn:hover{opacity:.85}.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.consent-list{list-style:none;font-size:.92rem;line-height:1.8;color:#c9cdd8;margin-bottom:1.75rem}
+.consent-list li{padding:.55rem 0 .55rem 1.6rem;position:relative;border-bottom:1px solid rgba(255,255,255,0.04)}
+.consent-list li:last-child{border-bottom:none}
+.consent-list li::before{content:'▸';position:absolute;left:0;color:var(--accent);font-size:.7rem;top:.75rem}
+.consent-list li strong{color:var(--text);font-weight:bold}
+.demo-field{margin-bottom:1.4rem}
+.demo-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.demo-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:inherit;font-size:.92rem;padding:.55rem .85rem;outline:none;transition:border-color .15s}
+.demo-input:focus{border-color:var(--accent)}
+.demo-input.err{border-color:var(--danger)}
+.demo-radio-group{display:flex;flex-direction:column;gap:.45rem}
+.demo-radio{display:flex;align-items:center;gap:.65rem;cursor:pointer;padding:.55rem .85rem;border-radius:7px;border:1px solid var(--border);background:var(--bg);transition:border-color .12s,background .12s;font-size:.86rem;color:#c9cdd8}
+.demo-radio:hover{border-color:rgba(255,255,255,0.2);background:var(--surface2)}
+.demo-radio input[type="radio"]{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+.demo-radio.selected{border-color:var(--accent);background:rgba(56,189,248,0.08);color:var(--text)}
+.steps-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem}
+.step{display:flex;align-items:flex-start;gap:.75rem;background:var(--surface2);border-radius:8px;padding:.75rem 1.1rem;font-size:.88rem;color:#c9cdd8;text-align:left;line-height:1.65}
+.step-n{font-size:.66rem;color:var(--accent);background:rgba(56,189,248,0.12);border-radius:4px;padding:.18rem .5rem;flex-shrink:0;margin-top:.15rem;font-weight:bold}
+.step strong{color:var(--text)}
+
+/* Ekran działania arytmetycznego */
+#s-math{background:#000}
+.math-instruction{font-size:.78rem;letter-spacing:.06em;color:var(--muted);margin-bottom:1.2rem;text-transform:uppercase;max-width:520px;line-height:1.6}
+.math-display{font-weight:bold;font-size:4.8rem;color:#fff;line-height:1;user-select:none;letter-spacing:.1em;margin-bottom:1.4rem}
+.math-input-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-bottom:.9rem}
+.math-input{width:200px;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-family:inherit;font-size:1.8rem;font-weight:bold;padding:.55rem 1rem;text-align:center;outline:none;transition:border-color .15s}
+.math-input:focus{border-color:var(--accent)}
+.math-input.err{border-color:var(--danger)}
+.math-timer-wrap{width:220px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-top:.4rem}
+.math-timer-fill{height:100%;background:var(--warning);transition:width 1s linear}
+
+/* Zadanie twórcze */
+.task-prompt{font-size:1.05rem;color:#c9cdd8;margin-bottom:1rem;line-height:1.65;max-width:600px;text-align:center}
+.task-prompt em{color:var(--text);font-style:normal;font-weight:bold}
+.solution-reminder{background:var(--surface);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:.7rem 1.1rem;max-width:600px;width:100%;margin-bottom:.9rem;text-align:left}
+.solution-reminder-label{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem;font-weight:bold}
+#solution-reminder-text{font-size:.88rem;color:#c9cdd8;line-height:1.55}
+#idea-textarea,#solution-textarea{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:.95rem;line-height:1.7;padding:1rem 1.25rem;resize:vertical;width:100%;max-width:600px;min-height:110px;outline:none;transition:border-color .15s}
+#idea-textarea:focus,#solution-textarea:focus{border-color:var(--accent)}
+.timer-wrap{width:100%;max-width:600px;margin-top:.7rem}
+.timer-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.timer-bar-fill{height:100%;transition:width 1s linear}
+.timer-bar-fill.phase1{background:var(--accent)}
+.timer-bar-fill.phase2{background:var(--warning)}
+.timer-label{font-size:.68rem;color:var(--muted);margin-top:.4rem;letter-spacing:.04em}
+.timer-label.go{color:var(--accent2)}
+.timer-label.hurry{color:var(--warning)}
+.timer-label.warn{color:var(--danger)}
+
+/* Instrukcja etapu */
+.phase-intro-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.2rem 2.5rem;max-width:700px;width:100%;text-align:left}
+.scenario-text{font-size:.92rem;line-height:1.8;color:#c9cdd8;margin-bottom:1.4rem;padding:1.2rem 1.5rem;background:var(--surface2);border-radius:10px;border-left:3px solid var(--accent)}
+.phase-task-text{font-size:.98rem;line-height:1.7;color:var(--text);margin-bottom:1.4rem;padding:.8rem 1.2rem;background:rgba(56,189,248,0.07);border-radius:8px;text-align:center}
+.phase-task-text strong{color:var(--text)}
+.phase-countdown{font-size:2.4rem;color:var(--accent);text-align:center;margin-bottom:.4rem;font-weight:bold}
+.phase-countdown-label{font-size:.66rem;color:var(--muted);text-align:center;letter-spacing:.08em;text-transform:uppercase}
+
+/* ITI */
+#s-iti{background:#000}
+
+/* Pasek postępu i HUD */
+.pid-hud{position:fixed;bottom:8px;left:12px;font-size:.55rem;color:rgba(255,255,255,0.14);z-index:100}
+.group-hud{position:fixed;bottom:8px;right:12px;font-size:.55rem;color:rgba(255,255,255,0.14);z-index:100}
+
+</style>
+</head>
+<body>
+<div id="app">
+<div class="pid-hud" id="pid-hud"></div>
+<div class="group-hud" id="group-hud"></div>
+
+<!-- ════════════ ZGODA / INSTRUKCJA WSTĘPNA ════════════ -->
+<div class="screen active scrollable" id="s-consent">
+  <div class="subtitle">Badanie naukowe</div>
+  <h1>Badanie twórczego myślenia</h1>
+  <div class="card">
+    <ul class="consent-list">
+      <li>Dziękujemy za zainteresowanie naszym badaniem. Zajmie ono <strong>około 30–40 minut</strong>. Nie korzystaj w tym czasie z telefonu, innych aplikacji, oraz nie przeglądaj innych kart przeglądarki, abyś mógł_ skupić się tylko na zadaniach, które przygotowaliśmy dla Ciebie.</li>
+      <li>Badanie dotyczy <strong>twórczego myślenia</strong>. Składa się z <strong>trzech etapów</strong>. W każdym etapie otrzymasz <strong>10 krótkich zadań</strong>.</li>
+      <li>Czasem oprócz zadań wymagających twórczego myślenia, pojawią się <strong>proste działania arytmetyczne</strong> — Twoim zadaniem będzie wówczas obliczenie i zapamiętywanie wyników tych działań.</li>
+      <li>Przed każdym etapem zobaczysz <strong>szczegółową instrukcję</strong>.</li>
+      <li>Proszę skup się na <strong>udzielaniu jak najlepszych odpowiedzi</strong> w zadaniach wymagających twórczego myślenia oraz na <strong>poprawnym wykonywaniu działań arytmetycznych</strong>.</li>
+      <li>Badanie jest w pełni <strong>dobrowolne</strong> (=możesz w każdej chwili zrezygnować z udziału bez podawania powodu).</li>
+      <li>Warunkiem udziału w badaniu jest bycie <strong>osobą pełnoletnią w przedziale wiekowym 18–30 lat</strong>.</li>
+      <li>W razie pytań lub wątpliwości prosimy o kontakt z prof. dr. hab. Jarosławem Orzechowskim drogą mailową na adres: <strong>jorzechowski@swps.edu.pl</strong>.</li>
+      <li>Za udział w badaniu przewidziana jest <strong>nagroda – wirtualna karta podarunkowa do Empiku o wartości 30 zł</strong>. Aby ją otrzymać, należy rzetelnie wykonać zadanie od początku do końca. Po weryfikacji wyników nagroda zostanie przesłana na podany przez Ciebie adres e-mail.</li>
+      <li>Jeśli <strong>nie wyrażasz zgody</strong> na udział w badaniu, opuść stronę.</li>
+      <li>Wyrażam zgodę na przetwarzanie podanych przeze mnie danych osobowych na potrzeby przeprowadzenia niniejszego badania i wysyłki karty podarunkowej do Empiku.</li>
+    </ul>
+    <div style="text-align:center">
+      <button class="btn" onclick="show('s-demo')">Wyrażam zgodę — rozpocznij badanie</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ METRYCZKA ════════════ -->
+<div class="screen scrollable" id="s-demo">
+  <div class="subtitle">Informacje o uczestniku</div>
+  <h1>Metryczka</h1>
+  <div class="card" style="max-width:580px">
+    <div class="demo-field"><div class="demo-label">Wpisz swoje ID</div>
+      <input class="demo-input" type="text" id="field-ownid"></div>
+    <div class="demo-field"><div class="demo-label">Płeć</div>
+      <div class="demo-radio-group">
+        <label class="demo-radio"><input type="radio" name="gender" value="mężczyzna"><span>Mężczyzna</span></label>
+        <label class="demo-radio"><input type="radio" name="gender" value="kobieta"><span>Kobieta</span></label>
+        <label class="demo-radio"><input type="radio" name="gender" value="inna"><span>Inna</span></label>
+        <label class="demo-radio"><input type="radio" name="gender" value="nie_podaje"><span>Nie chcę podawać płci</span></label>
+      </div></div>
+    <div class="demo-field"><div class="demo-label">Wiek</div>
+      <input class="demo-input" type="number" id="field-age" min="18" max="120" placeholder="wpisz swój wiek"></div>
+    <div class="demo-field"><div class="demo-label">Kraj</div>
+      <input class="demo-input" type="text" id="field-country" placeholder="wpisz kraj zamieszkania" oninput="this.value=this.value.replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]/g,'')"></div>
+    <div class="demo-field"><div class="demo-label">Najwyższy ukończony poziom edukacji</div>
+      <div class="demo-radio-group">
+        <label class="demo-radio"><input type="radio" name="edu" value="ponizej_sredniej"><span>Mniej niż wykształcenie średnie</span></label>
+        <label class="demo-radio"><input type="radio" name="edu" value="srednia"><span>Dyplom szkoły średniej lub równoważny</span></label>
+        <label class="demo-radio"><input type="radio" name="edu" value="w_trakcie_wyzszych"><span>W trakcie studiów wyższych (bez uzyskania dyplomu)</span></label>
+        <label class="demo-radio"><input type="radio" name="edu" value="wyzsze"><span>Ukończone studia wyższe lub wyższe poziomy edukacji</span></label>
+      </div></div>
+    <div class="demo-field"><div class="demo-label">Poziom języka polskiego</div>
+      <div class="demo-radio-group">
+        <label class="demo-radio"><input type="radio" name="lang" value="podstawowy"><span>Podstawowy</span></label>
+        <label class="demo-radio"><input type="radio" name="lang" value="sredni"><span>Średni</span></label>
+        <label class="demo-radio"><input type="radio" name="lang" value="zaawansowany"><span>Zaawansowany</span></label>
+        <label class="demo-radio"><input type="radio" name="lang" value="ojczysty"><span>Język ojczysty</span></label>
+      </div></div>
+    <div id="demo-error" style="font-size:.72rem;color:var(--danger);min-height:1.2rem;margin-bottom:.75rem"></div>
+    <div style="text-align:center"><button class="btn" onclick="submitDemo()">Dalej →</button></div>
+  </div>
+</div>
+
+<!-- ════════════ INSTRUKCJA ETAPU (60 s) ════════════ -->
+<div class="screen scrollable" id="s-phase-intro">
+  <div class="subtitle" id="phase-intro-subtitle">Etap 1 z 3</div>
+  <h1 id="phase-intro-title">Analiza problemu</h1>
+  <div class="phase-intro-card">
+    <div class="scenario-text" id="phase-scenario-text"></div>
+    <div class="phase-task-text" id="phase-task-text"></div>
+    <div class="phase-countdown" id="phase-countdown">60</div>
+    <div class="phase-countdown-label">sekund do rozpoczęcia etapu</div>
+  </div>
+</div>
+
+<!-- ════════════ WYBÓR ROZWIĄZANIA (przed etapem 3, maks 60 s) ════════════ -->
+<div class="screen scrollable" id="s-solution">
+  <div class="subtitle">Etap 3 z 3</div>
+  <h1>Wybór rozwiązania</h1>
+  <div class="phase-intro-card" style="text-align:center">
+    <p style="font-size:.95rem;line-height:1.75;color:#c9cdd8;margin-bottom:1.2rem">Wpisz <strong style="color:var(--text)">jedno wybrane przez Ciebie rozwiązanie</strong> tego problemu — to właśnie je będziesz oceniać w kolejnych zadaniach.</p>
+    <textarea id="solution-textarea" placeholder="Wpisz wybrane rozwiązanie tutaj..."></textarea>
+    <div class="phase-countdown" id="solution-countdown" style="margin-top:1rem">60</div>
+    <div class="phase-countdown-label">sekund do automatycznego przejścia</div>
+    <div id="solution-error" style="font-size:.7rem;color:var(--danger);min-height:1rem;margin-top:.4rem"></div>
+    <div style="text-align:center;margin-top:.6rem;display:flex;gap:1rem;justify-content:center;align-items:center">
+      <button class="btn" onclick="submitSolution()">Zatwierdź →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ WYJAŚNIENIE DZIAŁAŃ ARYTMETYCZNYCH ════════════ -->
+<div class="screen scrollable" id="s-math-explain">
+  <h1>Działania arytmetyczne</h1>
+  <h2>przeczytaj uważnie, zanim przejdziesz dalej</h2>
+  <div class="card" style="max-width:640px">
+    <div class="steps-list">
+      <div class="step"><span class="step-n">1</span><span>Przed następnymi zadaniami zobaczysz <strong>proste działanie arytmetyczne</strong>.</span></div>
+      <div class="step"><span class="step-n">2</span><span>Najpierw pojawi się pełne działanie (np. <strong>3 + 5</strong>) — oblicz wynik, wpisz go w pole i <strong>zapamiętaj</strong>.</span></div>
+      <div class="step"><span class="step-n">3</span><span>Przed każdym kolejnym zadaniem zobaczysz tylko zmianę (np. <strong>+ 4</strong> albo <strong>− 2</strong>) — zastosuj ją do zapamiętanego wyniku, wpisz nowy wynik i <strong>zapamiętaj go</strong>.</span></div>
+      <div class="step"><span class="step-n">4</span><span>Na każde działanie masz <strong>6 sekund</strong>. Możesz zatwierdzić wynik wcześniej przyciskiem <strong>Zatwierdź</strong>.</span></div>
+    </div>
+    <div class="phase-countdown" id="math-explain-countdown">60</div>
+    <div class="phase-countdown-label">sekund do automatycznego przejścia</div>
+    <div style="text-align:center;margin-top:1.2rem"><button class="btn" onclick="startMathAfterExplain()">Rozpocznij →</button></div>
+  </div>
+</div>
+
+<!-- ════════════ DZIAŁANIE ARYTMETYCZNE (6 s) ════════════ -->
+<div class="screen" id="s-math">
+  <div class="math-instruction" id="math-instruction">Oblicz wynik, wpisz i zapamiętaj</div>
+  <div class="math-display" id="math-display">3 + 5</div>
+  <div class="math-input-wrap">
+    <input class="math-input" type="number" id="math-answer" placeholder="?" autocomplete="off">
+  </div>
+  <div style="display:flex;gap:1rem;align-items:center;justify-content:center;margin-top:.4rem">
+    <button class="btn" onclick="submitMathAnswer()">Zatwierdź →</button>
+  </div>
+  <div class="math-timer-wrap"><div class="math-timer-fill" id="math-timer-bar" style="width:100%"></div></div>
+</div>
+
+<!-- ════════════ ZADANIE TWÓRCZE (45–60 s) ════════════ -->
+<div class="screen" id="s-creative">
+  <div class="task-prompt" id="creative-prompt"></div>
+  <div class="solution-reminder" id="solution-reminder" style="display:none">
+    <div class="solution-reminder-label">Oceniane rozwiązanie</div>
+    <div id="solution-reminder-text"></div>
+  </div>
+  <textarea id="idea-textarea" placeholder="Wpisz swoją odpowiedź tutaj..."></textarea>
+  <div class="timer-wrap">
+    <div class="timer-bar-bg"><div class="timer-bar-fill phase1" id="creative-bar" style="width:100%"></div></div>
+    <div class="timer-label" id="creative-label"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:1rem;align-items:center;justify-content:center">
+    <button class="btn" id="creative-btn" onclick="submitCreative()" disabled>Prześlij odpowiedź →</button>
+  </div>
+</div>
+
+<!-- ════════════ ITI ════════════ -->
+<div class="screen" id="s-iti" style="background:#000"></div>
+
+<!-- ════════════ KONIEC ════════════ -->
+<div class="screen scrollable" id="s-end">
+  <h1>Dziękujemy za udział!</h1>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  KONFIGURACJA
+// ═══════════════════════════════════════════════════
+const SHEET_URL        = "https://script.google.com/macros/s/AKfycbxcHJM24HrqsA0bJm0W2l-PYeiYr8Dh9fqZq07KgBSToimD85u0n27wXEVWFkGo4C5VEA/exec";
+const STUDY_VERSION    = 'v2';
+const MATH_TIME        = 6;    // sekundy na działanie arytmetyczne
+const CREATIVE_MIN     = 45;   // minimalny czas zadania twórczego
+const CREATIVE_MAX     = 60;   // maksymalny czas zadania twórczego
+const PHASE_INTRO_SEC  = 60;   // czas wyświetlania instrukcji etapu
+const MATH_EXPLAIN_SEC = 60;   // maks. czas planszy z wyjaśnieniem działań
+const SOLUTION_MAX     = 60;   // maks. czas na wpisanie wybranego rozwiązania
+const ITI_MS           = 500;  // przerwa między zadaniami
+const TRIALS_PER_PHASE = 10;
+
+// ═══════════════════════════════════════════════════
+//  SCENARIUSZ I ETAPY
+// ═══════════════════════════════════════════════════
+const SCENARIO = `W organizacji obserwuje się niską efektywność zebrań zespołów. Spotkania często trwają zbyt długo, nie prowadzą do konkretnych decyzji, a ich uczestnicy mają poczucie straty czasu. Pojawiają się trudności w komunikacji, brak jasno określonych celów spotkań oraz niewystarczające przygotowanie uczestników. W efekcie zebrania nie spełniają swojej funkcji i negatywnie wpływają na pracę zespołu oraz realizację zadań.`;
+
+const PHASES = [
+  {
+    id: 1,
+    name: "Analiza problemu",
+    taskLabel: "Przyczyna",
+    prompt: "Zapisz <em>jedną z możliwych przyczyn</em> tego problemu.",
+    phaseTask: "Twoim <strong>pierwszym zadaniem</strong> będzie zaproponowanie <strong>wielu możliwych przyczyn</strong> tego problemu."
+  },
+  {
+    id: 2,
+    name: "Generowanie pomysłów",
+    taskLabel: "Rozwiązanie",
+    prompt: "Zapisz <em>jedno z możliwych rozwiązań</em> tego problemu.",
+    phaseTask: "Twoim <strong>drugim zadaniem</strong> będzie zaproponowanie <strong>wielu możliwych rozwiązań</strong> tego problemu."
+  },
+  {
+    id: 3,
+    name: "Ocena rozwiązań",
+    taskLabel: "Ocena",
+    prompt: "Wpisz <em>jedną zaletę lub wadę</em> wskazanego przez Ciebie wcześniej rozwiązania tego problemu.",
+    phaseTask: "Twoim <strong>trzecim zadaniem</strong> będzie ocena jednego wybranego rozwiązania problemu — wypisanie po <strong>jednej zalecie lub wadzie</strong>. Na następnej planszy wpiszesz jedno wybrane rozwiązanie, które będziesz oceniać w tym etapie."
+  }
+];
+
+// ═══════════════════════════════════════════════════
+//  LOSOWANIE GRUPY (1–4)
+//  1 = obciążenie w etapie 1
+//  2 = obciążenie w etapie 2
+//  3 = obciążenie w etapie 3
+//  4 = brak obciążenia (grupa kontrolna)
+// ═══════════════════════════════════════════════════
+const GROUP = Math.floor(Math.random() * 4) + 1;
+const GROUP_LABEL = GROUP === 4 ? 'kontrolna' : 'eksp' + GROUP;
+
+function isPhaseLoaded(phaseNum) {
+  return GROUP === phaseNum;
+}
+
+// ═══════════════════════════════════════════════════
+//  PID
+// ═══════════════════════════════════════════════════
+const PID = 'P' + Math.floor(Math.random()*9000+1000) + Math.random().toString(36).slice(2,4).toUpperCase();
+
+document.getElementById('pid-hud').textContent = 'ID: ' + PID;
+document.getElementById('group-hud').textContent = 'Grupa: ' + GROUP_LABEL;
+
+// ═══════════════════════════════════════════════════
+//  STAN GLOBALNY
+// ═══════════════════════════════════════════════════
+let demo = {};
+let allData = [];
+let sessionStart = new Date().toISOString();
+let sessionStartMs = Date.now();
+
+let currentPhaseIdx = 0;   // 0, 1, 2
+let currentTrial = 0;      // 0–9 w etapie
+let mathSequence = [];
+let mathIdx = 0;
+
+let chosenSolution = '';   // rozwiązanie wybrane przed etapem 3
+
+let creativeStart = 0;
+let mathStart = 0;
+
+let mathActive = false;
+let creativeActive = false;
+let solutionActive = false;
+let phaseIntroActive = false;
+let mathExplainActive = false;
+
+// Timery
+let timerC1, timerC2, timerAutoSubmit;
+let timerMath;
+let timerPhaseCountdown;
+let timerSolutionCountdown;
+let timerMathExplainCountdown;
+
+// ═══════════════════════════════════════════════════
+//  NARZĘDZIA
+// ═══════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.scrollTop = 0;
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Zaznaczanie radio
+document.addEventListener('change', e => {
+  if (e.target.type !== 'radio') return;
+  const g = e.target.closest('.demo-radio-group');
+  if (!g) return;
+  g.querySelectorAll('.demo-radio').forEach(l => l.classList.remove('selected'));
+  e.target.closest('.demo-radio').classList.add('selected');
+});
+
+// ═══════════════════════════════════════════════════
+//  GENERACJA CIĄGU ARYTMETYCZNEGO
+//  Wyniki zawsze ściśle dodatnie (>= 1):
+//  wartość losowana 1–9; jeśli odejmowanie dałoby
+//  wynik < 1, operacja zamieniana jest na dodawanie.
+// ═══════════════════════════════════════════════════
+function generateMathSequence(n) {
+  const a = randInt(1, 9);
+  const b = randInt(1, 9);
+  let op = Math.random() < 0.5 ? '+' : '-';
+  if (op === '-' && a - b < 1) op = '+';
+  const firstResult = op === '+' ? a + b : a - b;
+
+  const seq = [{
+    display: `${a} ${op === '+' ? '+' : '−'} ${b}`,
+    expected: firstResult,
+    isFirst: true
+  }];
+
+  let current = firstResult;
+  for (let i = 1; i < n; i++) {
+    const val = randInt(1, 9);
+    let op2 = Math.random() < 0.5 ? '+' : '-';
+    if (op2 === '-' && current - val < 1) op2 = '+';
+    const result = op2 === '+' ? current + val : current - val;
+    seq.push({
+      display: `${op2 === '+' ? '+' : '−'} ${val}`,
+      expected: result,
+      isFirst: false
+    });
+    current = result;
+  }
+  return seq;
+}
+
+// ═══════════════════════════════════════════════════
+//  METRYCZKA
+// ═══════════════════════════════════════════════════
+function submitDemo() {
+  const ownId  = document.getElementById('field-ownid').value.trim();
+  const gender = document.querySelector('input[name="gender"]:checked');
+  const age    = document.getElementById('field-age').value.trim();
+  const country= document.getElementById('field-country').value.trim();
+  const edu    = document.querySelector('input[name="edu"]:checked');
+  const lang   = document.querySelector('input[name="lang"]:checked');
+  const err    = document.getElementById('demo-error');
+
+  document.getElementById('field-ownid').classList.remove('err');
+  document.getElementById('field-age').classList.remove('err');
+  document.getElementById('field-country').classList.remove('err');
+  err.textContent = '';
+
+  const m = [];
+  if (!ownId)  { m.push('własne ID'); document.getElementById('field-ownid').classList.add('err'); }
+  if (!gender) m.push('płeć');
+  if (!age || isNaN(age) || +age < 18 || +age > 120) { m.push('wiek (min. 18)'); document.getElementById('field-age').classList.add('err'); }
+  if (!country){ m.push('kraj'); document.getElementById('field-country').classList.add('err'); }
+  if (!edu)    m.push('poziom edukacji');
+  if (!lang)   m.push('poziom języka polskiego');
+
+  if (m.length) { err.textContent = 'Proszę uzupełnić: ' + m.join(', '); return; }
+
+  demo = { ownId, gender: gender.value, age: parseInt(age), country, edu: edu.value, langLevel: lang.value };
+  startMainExperiment();
+}
+
+// ═══════════════════════════════════════════════════
+//  PRZEBIEG BADANIA
+// ═══════════════════════════════════════════════════
+function startMainExperiment() {
+  currentPhaseIdx = 0;
+  showPhaseIntro();
+}
+
+function startPhaseTrials() {
+  currentTrial = 0;
+  if (PHASES[currentPhaseIdx].id === 3) {
+    showSolutionScreen();
+    return;
+  }
+  beginTrials();
+}
+
+function beginTrials() {
+  const phaseNum = PHASES[currentPhaseIdx].id;
+  if (isPhaseLoaded(phaseNum)) {
+    mathSequence = generateMathSequence(TRIALS_PER_PHASE);
+    mathIdx = 0;
+    showMathExplain();
+  } else {
+    showCreativeScreen();
+  }
+}
+
+function nextTrialInPhase() {
+  currentTrial++;
+
+  if (currentTrial >= TRIALS_PER_PHASE) {
+    // Koniec etapu — wyślij pełny wiersz (dane dotychczasowe).
+    // Ostatni etap → oznacz jako ukończone.
+    const wasLastPhase = (currentPhaseIdx >= PHASES.length - 1);
+    sendProgress(wasLastPhase);
+
+    currentPhaseIdx++;
+    if (currentPhaseIdx >= PHASES.length) {
+      endExperiment();
+    } else {
+      showPhaseIntro();
+    }
+    return;
+  }
+
+  const phaseNum = PHASES[currentPhaseIdx].id;
+  if (isPhaseLoaded(phaseNum)) {
+    mathIdx++;
+    show('s-iti');
+    setTimeout(() => showMathScreen(), ITI_MS);
+  } else {
+    show('s-iti');
+    setTimeout(() => showCreativeScreen(), ITI_MS);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  (pasek postępu usunięty)
+// ═══════════════════════════════════════════════════
+function updateHUD() {
+  // brak elementów do aktualizacji — pasek postępu został usunięty
+}
+
+// ═══════════════════════════════════════════════════
+//  INSTRUKCJA ETAPU (60 s, auto-przejście)
+// ═══════════════════════════════════════════════════
+function showPhaseIntro() {
+  const phase = PHASES[currentPhaseIdx];
+  document.getElementById('phase-intro-subtitle').textContent = `Etap ${phase.id} z 3`;
+  document.getElementById('phase-intro-title').textContent = phase.name;
+  document.getElementById('phase-scenario-text').textContent = SCENARIO;
+  document.getElementById('phase-task-text').innerHTML = phase.phaseTask;
+
+
+  let remaining = PHASE_INTRO_SEC;
+  document.getElementById('phase-countdown').textContent = remaining;
+
+  phaseIntroActive = true;
+  show('s-phase-intro');
+
+  clearInterval(timerPhaseCountdown);
+  timerPhaseCountdown = setInterval(() => {
+    remaining--;
+    document.getElementById('phase-countdown').textContent = remaining;
+    if (remaining <= 0) {
+      endPhaseIntro();
+    }
+  }, 1000);
+}
+
+function endPhaseIntro() {
+  if (!phaseIntroActive) return;
+  phaseIntroActive = false;
+  clearInterval(timerPhaseCountdown);
+  startPhaseTrials();
+}
+
+// ═══════════════════════════════════════════════════
+//  WYBÓR ROZWIĄZANIA (przed etapem 3, maks 60 s)
+// ═══════════════════════════════════════════════════
+function showSolutionScreen() {
+  const ta = document.getElementById('solution-textarea');
+  ta.value = '';
+  document.getElementById('solution-error').textContent = '';
+
+
+  let remaining = SOLUTION_MAX;
+  document.getElementById('solution-countdown').textContent = remaining;
+
+  solutionActive = true;
+  show('s-solution');
+  ta.focus();
+
+  clearInterval(timerSolutionCountdown);
+  timerSolutionCountdown = setInterval(() => {
+    remaining--;
+    document.getElementById('solution-countdown').textContent = remaining;
+    if (remaining <= 0) {
+      finishSolution();
+    }
+  }, 1000);
+}
+
+function submitSolution() {
+  const txt = document.getElementById('solution-textarea').value.trim();
+  if (txt.length === 0) {
+    document.getElementById('solution-error').textContent = 'Wpisz rozwiązanie, aby przejść dalej!';
+    return;
+  }
+  finishSolution();
+}
+
+function finishSolution() {
+  if (!solutionActive) return;
+  solutionActive = false;
+  clearInterval(timerSolutionCountdown);
+  chosenSolution = document.getElementById('solution-textarea').value.trim();
+  beginTrials();
+}
+
+// ═══════════════════════════════════════════════════
+//  WYJAŚNIENIE DZIAŁAŃ ARYTMETYCZNYCH
+//  (tylko dla grupy z obciążeniem, przed 1. działaniem)
+// ═══════════════════════════════════════════════════
+function showMathExplain() {
+  let remaining = MATH_EXPLAIN_SEC;
+  document.getElementById('math-explain-countdown').textContent = remaining;
+
+  mathExplainActive = true;
+  show('s-math-explain');
+
+  clearInterval(timerMathExplainCountdown);
+  timerMathExplainCountdown = setInterval(() => {
+    remaining--;
+    document.getElementById('math-explain-countdown').textContent = remaining;
+    if (remaining <= 0) {
+      startMathAfterExplain();
+    }
+  }, 1000);
+}
+
+function startMathAfterExplain() {
+  if (!mathExplainActive) return;
+  mathExplainActive = false;
+  clearInterval(timerMathExplainCountdown);
+  showMathScreen();
+}
+
+// ═══════════════════════════════════════════════════
+//  DZIAŁANIE ARYTMETYCZNE (6 s lub Zatwierdź)
+// ═══════════════════════════════════════════════════
+function showMathScreen() {
+  const item = mathSequence[mathIdx];
+
+  const instrEl = document.getElementById('math-instruction');
+  if (item.isFirst) {
+    instrEl.textContent = 'Oblicz wynik, wpisz i zapamiętaj';
+  } else {
+    instrEl.textContent = 'Do zapamiętanego wyniku zastosuj działanie, wpisz i zapamiętaj nowy wynik';
+  }
+
+  document.getElementById('math-display').textContent = item.display;
+
+  const input = document.getElementById('math-answer');
+  input.value = '';
+  input.classList.remove('err');
+
+  const bar = document.getElementById('math-timer-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+
+  updateHUD();
+  mathActive = true;
+  show('s-math');
+  input.focus();
+  mathStart = Date.now();
+
+  // Wymuszenie reflow (jak wyżej) — animacja działa od pierwszego działania.
+  void bar.offsetWidth;
+  bar.style.transition = `width ${MATH_TIME}s linear`;
+  bar.style.width = '0%';
+
+  clearTimeout(timerMath);
+  timerMath = setTimeout(() => endMathScreen(), MATH_TIME * 1000);
+}
+
+function submitMathAnswer() {
+  if (!mathActive) return;
+  const input = document.getElementById('math-answer');
+  if (input.value.trim() === '') {
+    input.classList.add('err');
+    setTimeout(() => input.classList.remove('err'), 700);
+    return;
+  }
+  endMathScreen();
+}
+
+function endMathScreen() {
+  if (!mathActive) return;
+  mathActive = false;
+  clearTimeout(timerMath);
+
+  const rawGiven = document.getElementById('math-answer').value.trim();
+  const item = mathSequence[mathIdx];
+  const rt = Date.now() - mathStart;
+
+  if (rawGiven === '') {
+    // Puste pole → brak odpowiedzi (nie liczy się do trafności)
+    item._given = null;
+    item._correct = null;
+  } else {
+    const parsed = Number(rawGiven);
+    if (Number.isFinite(parsed)) {
+      // Poprawny wpis liczbowy → 1 (trafny) lub 0 (błędny)
+      item._given = parsed;
+      item._correct = (parsed === item.expected) ? 1 : 0;
+    } else {
+      // Wpisano coś, co nie jest liczbą → błędna odpowiedź, zachowujemy oryginalny tekst
+      item._given = rawGiven;
+      item._correct = 0;
+    }
+  }
+  item._rt = rt;
+
+  showCreativeScreen();
+}
+
+// ═══════════════════════════════════════════════════
+//  ZADANIE TWÓRCZE (45–60 s)
+// ═══════════════════════════════════════════════════
+function showCreativeScreen() {
+  const phase = PHASES[currentPhaseIdx];
+  document.getElementById('creative-prompt').innerHTML = phase.prompt;
+
+  // Przypomnienie wybranego rozwiązania (tylko etap 3)
+  const rem = document.getElementById('solution-reminder');
+  if (phase.id === 3) {
+    document.getElementById('solution-reminder-text').textContent = chosenSolution || '—';
+    rem.style.display = 'block';
+  } else {
+    rem.style.display = 'none';
+  }
+
+  const ta = document.getElementById('idea-textarea');
+  ta.value = '';
+  const btn = document.getElementById('creative-btn');
+  const bar = document.getElementById('creative-bar');
+  const lbl = document.getElementById('creative-label');
+
+  btn.disabled = true;
+  bar.className = 'timer-bar-fill phase1';
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  lbl.className = 'timer-label';
+  lbl.textContent = `Masz ${CREATIVE_MAX} sekund — możliwość przejścia dalej po ${CREATIVE_MIN} sekundach...`;
+
+  updateHUD();
+  creativeActive = true;
+  show('s-creative');
+  ta.focus();
+  creativeStart = Date.now();
+
+  // Wymuszenie reflow: gwarantuje, że stan 100% zostanie namalowany
+  // ZANIM ruszy przejście — dzięki temu animacja działa już od pierwszego zadania.
+  void bar.offsetWidth;
+  bar.style.transition = `width ${CREATIVE_MAX}s linear`;
+  bar.style.width = '0%';
+
+  clearTimeout(timerC1); clearTimeout(timerC2); clearTimeout(timerAutoSubmit);
+
+  timerAutoSubmit = setTimeout(autoEndCreative, CREATIVE_MAX * 1000);
+
+  timerC1 = setTimeout(() => {
+    btn.disabled = false;
+    bar.className = 'timer-bar-fill phase2';
+    const left = CREATIVE_MAX - CREATIVE_MIN;
+    lbl.className = 'timer-label go';
+    lbl.textContent = `Możesz przesłać — auto-przejście za ${left}s`;
+
+    timerC2 = setTimeout(() => {
+      lbl.className = 'timer-label hurry';
+      lbl.textContent = 'Czas minął — zapisuję odpowiedź...';
+    }, (left - 3) * 1000);
+  }, CREATIVE_MIN * 1000);
+}
+
+function autoEndCreative() {
+  if (!creativeActive) return;
+  creativeActive = false;
+  clearTimeout(timerC1); clearTimeout(timerC2); clearTimeout(timerAutoSubmit);
+  const text = document.getElementById('idea-textarea').value.trim();
+  const rt = Date.now() - creativeStart;
+  saveTrial(text, rt);
+}
+
+function submitCreative() {
+  if (!creativeActive) return;
+  const text = document.getElementById('idea-textarea').value.trim();
+  if (text.length === 0) {
+    document.getElementById('creative-label').className = 'timer-label warn';
+    document.getElementById('creative-label').textContent = 'Wpisz odpowiedź, aby przejść dalej!';
+    return;
+  }
+  creativeActive = false;
+  clearTimeout(timerC1); clearTimeout(timerC2); clearTimeout(timerAutoSubmit);
+  const rt = Date.now() - creativeStart;
+  saveTrial(text, rt);
+}
+
+// ═══════════════════════════════════════════════════
+//  ZAPIS PRÓBY
+// ═══════════════════════════════════════════════════
+function saveTrial(text, rt) {
+  const phase = PHASES[currentPhaseIdx];
+  const phaseNum = phase.id;
+  const loaded = isPhaseLoaded(phaseNum);
+
+  const trialData = {
+    pid: PID,
+    grupa: GROUP_LABEL,
+    etap: phaseNum,
+    etapNazwa: phase.name,
+    zadanieNr: currentTrial + 1,
+    obciazenie: loaded,
+    odpowiedz: text,
+    odpowiedzRT: rt,
+    dzialanie: null,
+    wynikPoprawny: null,
+    wynikWpisany: null,
+    dzialaniePoprawne: null,
+    dzialanieRT: null,
+    wybraneRozwiazanie: phaseNum === 3 ? chosenSolution : ''
+  };
+
+  if (loaded && mathSequence[mathIdx]) {
+    const m = mathSequence[mathIdx];
+    trialData.dzialanie = m.display;
+    trialData.wynikPoprawny = m.expected;
+    trialData.wynikWpisany = m._given !== undefined ? m._given : null;
+    trialData.dzialaniePoprawne = m._correct !== undefined ? m._correct : null;
+    trialData.dzialanieRT = m._rt !== undefined ? m._rt : null;
+  }
+
+  allData.push(trialData);
+  nextTrialInPhase();
+}
+
+// ═══════════════════════════════════════════════════
+//  BUDOWA JEDNEGO WIERSZA (1 osoba = 1 wiersz, 127 kolumn)
+// ═══════════════════════════════════════════════════
+function buildRow(isComplete) {
+  const row = {
+    pid: PID,
+    wlasne_id: demo.ownId || '',
+    grupa: GROUP_LABEL,
+    start_sesji: sessionStart,
+    czy_ukonczone: isComplete ? 'tak' : 'nie',
+    wersja_badania: STUDY_VERSION,
+    czas_calosci_s: Math.round((Date.now() - sessionStartMs) / 1000),
+    plec: demo.gender || '',
+    wiek: (demo.age !== undefined && demo.age !== null) ? demo.age : '',
+    kraj: demo.country || '',
+    edukacja: demo.edu || '',
+    jezyk_polski: demo.langLevel || ''
+  };
+
+  // C + D: odpowiedzi twórcze i czasy wpisywania (ms)
+  for (let e = 1; e <= 3; e++) {
+    for (let z = 1; z <= 10; z++) {
+      const t = allData.find(d => d.etap === e && d.zadanieNr === z);
+      row[`e${e}_z${z}`] = t ? t.odpowiedz : '';
+      row[`e${e}_z${z}_ms`] = t ? t.odpowiedzRT : '';
+    }
+  }
+
+  // E: wybrane rozwiązanie (etap 3)
+  row['wybrane_rozwiazanie'] = chosenSolution || '';
+
+  // F: 10 działań arytmetycznych (wypełnione tylko w obciążonym etapie)
+  const loadedEtap = (GROUP >= 1 && GROUP <= 3) ? GROUP : null;
+  let sumRt = 0, rtCount = 0, correctCount = 0;
+  let koncowyBadanego = '', koncowyOczekiwany = '';
+
+  for (let k = 1; k <= 10; k++) {
+    const t = loadedEtap ? allData.find(d => d.etap === loadedEtap && d.zadanieNr === k) : null;
+    if (loadedEtap && t) {
+      row[`aryt${k}_dzialanie`]  = (t.dzialanie ?? '');
+      row[`aryt${k}_oczekiwany`] = (t.wynikPoprawny ?? '');
+      row[`aryt${k}_wpisany`]    = (t.wynikWpisany === null || t.wynikWpisany === undefined) ? '' : t.wynikWpisany;
+      row[`aryt${k}_poprawne`]   = (t.dzialaniePoprawne === null || t.dzialaniePoprawne === undefined) ? '' : t.dzialaniePoprawne;
+      row[`aryt${k}_rt_ms`]      = (t.dzialanieRT === null || t.dzialanieRT === undefined) ? '' : t.dzialanieRT;
+      if (t.dzialanieRT) { sumRt += t.dzialanieRT; rtCount++; }
+      // Trafność: brak odpowiedzi liczy się jak błąd (mianownik zawsze 10)
+      if (t.dzialaniePoprawne === 1) correctCount++;
+      // Wynik końcowy = ostatnie (10.) działanie w sekwencji
+      if (k === 10) {
+        koncowyBadanego   = (t.wynikWpisany === null || t.wynikWpisany === undefined) ? '' : t.wynikWpisany;
+        koncowyOczekiwany = (t.wynikPoprawny ?? '');
+      }
+    } else {
+      row[`aryt${k}_dzialanie`]  = '';
+      row[`aryt${k}_oczekiwany`] = '';
+      row[`aryt${k}_wpisany`]    = '';
+      row[`aryt${k}_poprawne`]   = '';
+      row[`aryt${k}_rt_ms`]      = '';
+    }
+  }
+
+  // Różnica: wynik badanego − wynik prawidłowy (tylko gdy oba są liczbami)
+  let koncowaRoznica = '';
+  if (koncowyBadanego !== '' && koncowyOczekiwany !== '') {
+    const b = Number(koncowyBadanego);
+    const o = Number(koncowyOczekiwany);
+    if (Number.isFinite(b) && Number.isFinite(o)) koncowaRoznica = b - o;
+  }
+
+  // G: podsumowanie arytmetyki
+  row['arytm_etap']              = loadedEtap ? loadedEtap : 'brak';
+  row['arytm_trafnosc_proc']     = loadedEtap ? Math.round(correctCount / 10 * 100) : '';
+  row['arytm_rt_sredni_ms']      = rtCount ? Math.round(sumRt / rtCount) : '';
+  row['wynik_koncowy_badanego']  = koncowyBadanego;
+  row['wynik_koncowy_oczekiwany']= koncowyOczekiwany;
+  row['wynik_koncowy_roznica']   = koncowaRoznica;
+
+  return row;
+}
+
+// ═══════════════════════════════════════════════════
+//  WYSYŁANIE DANYCH (Apps Script — jeden wiersz na osobę)
+// ═══════════════════════════════════════════════════
+async function sendData(row) {
+  if (!SHEET_URL) return;
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row)
+    });
+  } catch (e) { console.error('Błąd wysyłania danych:', e); }
+}
+
+// ═══════════════════════════════════════════════════
+//  WYSYŁKA PO ETAPIE (pełny wiersz, upsert po pid w Apps Script)
+// ═══════════════════════════════════════════════════
+function sendProgress(isComplete) {
+  const row = buildRow(isComplete);
+  sendData(row);
+  console.log(isComplete ? '=== KOMPLETNE DANE (po etapie 3) ===' : '=== Wysłano dane po etapie ===');
+  console.log('PID:', PID, '| Grupa:', GROUP_LABEL, '| ukończone:', isComplete ? 'tak' : 'nie');
+  console.log(JSON.stringify(row, null, 2));
+}
+
+// ═══════════════════════════════════════════════════
+//  KONIEC BADANIA (dane wysłane już po ostatnim etapie)
+// ═══════════════════════════════════════════════════
+function endExperiment() {
+  show('s-end');
+}
+</script>
+</body>
+</html>
